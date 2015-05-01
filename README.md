@@ -9,10 +9,10 @@ Important: jQuery must also be in your project for xCroller to work properly.
 Using it is very simple: you have to register the elements you want to apply the effect to and initialize the plugin.
 
 To register the elements you can just add the class xCroller to the DOM elements you wish, or assign a jQuery 
-selector to the global variable _XCROLLER_INIT.
+selector to the property xCroller.selector.
 
 To initialize the plugin, simply add data-xcroller attribute to the BODY tag. 
 You can set it to true, TRUE or 1, or assign a jQuery selector to it. 
 
-You can also initialize it by Javascript running xCroller.init([selector],[params]) or xCrollerInit([selector],[params])
+You can also initialize it by Javascript running new xCroller([selector],[params]) or xcroller([selector],[params]). You can change the other of these two parameters.
 
