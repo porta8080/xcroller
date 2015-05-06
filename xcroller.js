@@ -8,8 +8,8 @@ function xcroller(param1,param2){
 
 xCroller.ready = false;
 xCroller.top = 0;
-xCroller.sticky_elements = new Array();
-xCroller.moving_elements = new Array();
+xCroller.sticky = new Array();
+xCroller.moving = new Array();
 
 xCroller.start = function(selector,params){
     if(xCroller.ready){
@@ -78,108 +78,128 @@ xCroller.run = function(param1,param2){
     if(!selector) selector = '.xcroller';
 
     xCroller.top = 0;
-    var w,b,has,tp,lp,infinite,xi,xf,yi,yf,vs,hs,el_w,el_h,el,k,bis,posx,c,bgpt,bgpl,offset,clone,sticky,fixed,sibling,sibling_margin,index=1;
+    var ii,axis,w,b,has,z_index,position,tp,lp,infinite,xi,xf,yi,yf,vs,hs,el_w,el_h,el,k,bis,posx,c,bgpt,bgpl,offset,clone,sticky,fixed,sibling,sibling_margin,index=1;
+    var mode;
     $(selector).each(function(){
         el = $(this);
 
-        sticky = el.attr('data-sticky');
-        if(sticky){
-            sticky = sticky.toLowerCase();
-        }else if(params && 'sticky' in params) sticky = params.sticky;
-        if(sticky === 1 || sticky === '1' || sticky === 'true' || sticky === true){
+        mode = el.attr('data-xcmode');
+        if(!mode && params) mode = params.mode;
+        if(!mode) mode = 'moving';
+        mode = mode.toLowerCase();
+
+        if(mode == 'sticky'){
             sibling = el.next();
             sibling_margin = parseInt(sibling.css('margin-top').replace('px',''));
             sibling_margin += el.outerHeight(true);
             sibling.css('margin-top',sibling_margin);
             offset = el.offset();
-
+            tp = offset.top;
+            lp = offset.left;
             el.css('width',el.width());
             el.css('position','absolute');
-            el.css('left',offset.left);
-            el.css('top',offset.top);
-            el.css('z-index',-1);
+            el.css('left',lp);
+            el.css('top',tp);
 
-            xCroller.sticky_elements.push(el);
-        }else{
+            ii=0;
+            el.siblings().each(function(){
+                z_index = $(this).css('z-index');
+                position = $(this).css('position');
+                if(!z_index || z_index == 'auto'){ $(this).css('z-index',ii); }
+                if(position != 'absolute' && position != 'fixed' && position != 'relative'){ $(this).css('position','relative'); }
+                ii++;
+            });
+            //el.css('z-index',-1);
+            //jQuery,initial left, initial top, current left, current top,last scroll y
+            xCroller.sticky.push([el,lp,tp,lp,tp,0]);
+        }else if(mode == 'moving' || mode == 'infinite'){
+            el.css('position','relative');
+            el.css('z-index',index);
+            el.css('background-repeat','repeat');
+            bis = new BIS(el);
+            if(bis.has){
+                bis.get(function(bi_size,params){
+                    el = params.el;
+                    index = params.index;
 
-            fixed = el.attr('data-fixed');
-            if(fixed){
-                fixed = fixed.toLowerCase();
-            }else if(params && 'fixed' in params) fixed = params.fixed;
-            if(fixed === 1 || fixed === '1' || fixed === 'true' || fixed === true){
-                el.css('background-attachment','fixed');
-                el.css('background-size','cover');
-                el.css('background-position','center center');
-            }else{
-                el.css('position','relative');
-                el.css('z-index',index);
-                el.css('background-repeat','repeat');
-                bis = new BIS(el);
-                if(bis.has){
-                    bis.get(function(bi_size,params){
-                        el = params.el;
-                        hs = el.attr('data-horizontal');
-                        if(!hs){
-                            if(params && 'horizontal' in params) hs = params.horizontal;
+                    hs = el.attr('data-xchs');
+                    if(!hs) hs = el.attr('data-xchorizontal');
+                    if(!hs){
+                        if(params) {
+                            if('hs' in params) hs = params.hs;
+                            else if('horizontal' in params) hs = params.horizontal;
                             else hs = 0;
-                        }else hs = parseFloat(hs);
+                        }else hs = 0;
+                    }else hs = parseFloat(hs);
 
-                        vs = el.attr('data-vertical');
-                        if(!vs){
-                            if(params && 'vertical' in params) vs = params.vertical;
-                            else vs = 1+(index/10);
-                        }else vs = parseFloat(vs)/10;
-
-                        infinite = el.attr('data-infinite');
-                        if(!infinite){
-                            if(params && 'infinite' in params) infinite = params.infinite;
+                    vs = el.attr('data-xcvs');
+                    if(!vs) vs = el.attr('data-xcvertical');
+                    if(!vs){
+                        if(params){
+                            if('vs' in params) vs = params.vs;
+                            else if('vertical' in params) vs = params.vertical;
+                            else vs = 1+(index);
                         }
+                        else vs = 1+(index);
+                    }else vs = parseFloat(vs);
 
-                        if(infinite === 1 || infinite === '1' || infinite === 'true' || infinite === true) infinite = true;
-                        else infinite = false;
+                    if(mode == 'infinite') infinite = true;
+                    else infinite = false;
 
-                        el_w = el.outerWidth();
-                        el_h = el.outerHeight();
+                    axis = el.attr('data-xcaxis');
+                    if(!axis && params && 'axis' in params) axis = params.axis;
+                    if(axis === 1 || axis === '1' || axis === 'true' || axis === true) axis = true;
+                    else axis = false;
+                    axis = true;
 
-                        if(hs > 0 ){
-                            xi = bgpl = 0;
-                            xf = el_w - bi_size.width;
-                        }else{
-                            xi = bgpl = el_w - bi_size.width;
-                            xf = 0;
-                        }
+                    el_w = el.outerWidth();
+                    el_h = el.outerHeight();
 
-                        if(vs > 0 ){
-                            yi = bgpt = 0;
-                            yf = el_h - bi_size.height;
-                        }else{
-                            yi = bgpt = el_h - bi_size.height;
-                            yf = 0;
-                        }
+                    if(hs > 0){
+                        xi = bgpl = 0;
+                        xf = el_w - bi_size.width;
+                    }else{
+                        xi = bgpl = el_w - bi_size.width;
+                        xf = 0;
+                    }
 
-                        el.css('background-position',(bgpl)+'px '+(bgpt)+'px');
-                        //jQuery,1 horizontal speed,2 vertical speed,3 start left,4 start top,5 left step,6 top step,7 last scroll left,8 last scroll top,9 width,10 height,11 last left position,12 last top position,13 element width,14 element height,15 infinite, initial limit x, final limit x, initial limit y, final limit x
-                        xCroller.moving_elements.push([el,hs * -1,vs * -1,bgpl,bgpt,0,0,0,0,bi_size.width,bi_size.height,bgpl,bgpt,el_w,el_h,infinite,xi,xf,yi,yf]);
-                    },{el:el});
-                }
+                    if(vs > 0){
+                        yi = bgpt = 0;
+                        yf = el_h - bi_size.height;
+                    }else{
+                        yi = bgpt = el_h - bi_size.height;
+                        yf = 0;
+                    }
+
+                    el.css('background-position',(bgpl)+'px '+(bgpt)+'px');
+                    //jQuery,1 horizontal speed,2 vertical speed,3 start left,4 start top,5 left step,6 top step,7 last scroll left,8 last scroll top,9 width,10 height,11 last left position,12 last top position,13 element width,14 element height,15 infinite, initial limit x, final limit x, initial limit y, final limit x, axis
+                    xCroller.moving.push([el,hs * -1,vs * -1,bgpl,bgpt,0,0,0,0,bi_size.width,bi_size.height,bgpl,bgpt,el_w,el_h,infinite,xi,xf,yi,yf,axis]);
+                },{el:el, index:index});
             }
+        }else if(mode == 'fixed'){
+            el.css('background-attachment','fixed');
+            el.css('background-size','cover');
+            el.css('background-position','center center');
         }
 
         index++;
     });
     w = $(window);
     w.scroll(function(){
-        posx = w.scrollTop();
-        for(k in xCroller.moving_elements){
-            c = xCroller.moving_elements[k];
+        posy = w.scrollTop();
+        //posx = w.scrollLeft();
+        for(k in xCroller.moving){
+            c = xCroller.moving[k];
             el = c[0];
             b = xCroller.isOnViewport(el);
             if(b){
-                //currently only the y axis
+
+                if(c[20]) pos = posy;
+
                 lp = c[5]; tp = c[6];
-                if(c[8] < posx){tp++; lp++;}
-                else if(c[8] > posx){tp--; lp--;}
-                c[8] = posx;
+                if(c[8] < pos){tp++; lp++;}
+                else if(c[8] > pos){tp--; lp--;}
+                c[8] = pos;
 
                 cx = c[3] + Math.floor(lp * c[1]);
                 if(!c[15]){
@@ -208,12 +228,28 @@ xCroller.run = function(param1,param2){
 
                 var coords = cx+'px '+cy+ 'px';
                 el.css({'background-position': coords,'-moz-background-position': coords});
+
+                xCroller.moving[k] = c;
             }
         }
 
-        for(k in xCroller.sticky_elements){
-            c = xCroller.sticky_elements[k];
-            c.css({'transform': 'translateY('+(posx)+'px)','-moz-transform': 'translateY('+(posx)+'px)'});
+        for(k in xCroller.sticky){
+            c = xCroller.sticky[k];
+            tp = c[0].offset().top;
+
+            if(posy > c[5]){
+                if(posy > c[2]){
+                    c[0].css('position','fixed');
+                    c[0].css('top','0');
+                }
+            }else if(posy < c[5]){
+                if(posy < c[2]){
+                    c[0].css('position','absolute');
+                    c[0].css('top',c[2]);
+                }
+            }
+
+            c[5] = posy;
         }
     });
 
