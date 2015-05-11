@@ -10,6 +10,7 @@ xCroller.ready = false;
 xCroller.top = 0;
 xCroller.sticky = new Array();
 xCroller.moving = new Array();
+xCroller.attached_scroll = false;
 
 xCroller.start = function(selector,params){
     if(xCroller.ready){
@@ -19,11 +20,13 @@ xCroller.start = function(selector,params){
 
     var timer;
     var verifier = function(){
-        if('jQuery' in window || jQuery) xCroller.ready = true;
+        if('jQuery' in window || jQuery){
+            if($('body').length) xCroller.ready = true;
+        }
 
         if(!xCroller.ready){
             timer = setTimeout(function(){
-                timer();
+                verifier();
             },250);
         }else{
 
@@ -78,8 +81,9 @@ xCroller.run = function(param1,param2){
     if(!selector) selector = '.xcroller';
 
     xCroller.top = 0;
-    var ii,axis,w,b,has,z_index,position,tp,lp,infinite,xi,xf,yi,yf,vs,hs,el_w,el_h,el,k,bis,posx,c,bgpt,bgpl,offset,clone,sticky,fixed,sibling,sibling_margin,index=1;
+    var yd,xd,tip,lip,ii,axis,w,b,has,z_index,position,tp,lp,infinite,xi,xf,yi,yf,vs,hs,el_w,el_h,el,k,bis,posx,c,bgpt,bgpl,offset,clone,sticky,fixed,sibling,sibling_margin,index=1;
     var mode;
+
     $(selector).each(function(){
         el = $(this);
 
@@ -158,10 +162,10 @@ xCroller.run = function(param1,param2){
                     if(hs > 0){
                         xi = bgpl = 0;
                         xf = el_w - bi_size.width;
-                    }else{
+                    }else if(hs < 0){
                         xi = bgpl = el_w - bi_size.width;
                         xf = 0;
-                    }
+                    }else xf = bgpl = xi = 0;
 
                     if(vs > 0){
                         yi = bgpt = 0;
@@ -172,7 +176,7 @@ xCroller.run = function(param1,param2){
                     }
 
                     el.css('background-position',(bgpl)+'px '+(bgpt)+'px');
-                    //jQuery,1 horizontal speed,2 vertical speed,3 start left,4 start top,5 left step,6 top step,7 last scroll left,8 last scroll top,9 width,10 height,11 last left position,12 last top position,13 element width,14 element height,15 infinite, initial limit x, final limit x, initial limit y, final limit x, axis
+                    //jQuery,1 horizontal speed,2 vertical speed,3 start left,4 start top,5 left step,6 top step,7 last scroll left,8 last scroll top,9 width,10 height,11 last left position,12 last top position,13 element width,14 element height,15 infinite, 16 initial limit x, 17 final limit x, 18 initial limit y, 19 final limit y, 20 axis
                     xCroller.moving.push([el,hs * -1,vs * -1,bgpl,bgpt,0,0,0,0,bi_size.width,bi_size.height,bgpl,bgpt,el_w,el_h,infinite,xi,xf,yi,yf,axis]);
                 },{el:el, index:index});
             }
@@ -184,10 +188,18 @@ xCroller.run = function(param1,param2){
 
         index++;
     });
+
+    if(!xCroller.attached_scroll){
+        xCroller.attached_scroll = true;
     w = $(window);
+    tip = w.scrollTop();
+
     w.scroll(function(){
         posy = w.scrollTop();
         //posx = w.scrollLeft();
+        //yd = posy - tip;
+        //tip = posy;
+
         for(k in xCroller.moving){
             c = xCroller.moving[k];
             el = c[0];
@@ -197,8 +209,9 @@ xCroller.run = function(param1,param2){
                 if(c[20]) pos = posy;
 
                 lp = c[5]; tp = c[6];
-                if(c[8] < pos){tp++; lp++;}
-                else if(c[8] > pos){tp--; lp--;}
+                if(c[8] < pos){ tp++; lp++; }
+                else if(c[8] > pos){ tp--; lp--; }
+
                 c[8] = pos;
 
                 cx = c[3] + Math.floor(lp * c[1]);
@@ -253,6 +266,7 @@ xCroller.run = function(param1,param2){
         }
     });
 
+    }
     xCroller.selector = null;
 };
 
